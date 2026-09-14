@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+groq
+supabase
+rembg
+opencv-python-headless
+pillow
+python-dotenv
+pydantic
+python-multipart
