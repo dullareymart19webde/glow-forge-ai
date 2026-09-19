@@ -3,6 +3,7 @@ uvicorn
 groq
 supabase
 rembg[cpu]
+onnxruntime
 opencv-python-headless
 pillow
 python-dotenv
