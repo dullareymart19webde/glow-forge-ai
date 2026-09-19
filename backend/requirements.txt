@@ -2,7 +2,7 @@ fastapi
 uvicorn
 groq
 supabase
-rembg
+rembg[cpu]
 opencv-python-headless
 pillow
 python-dotenv
