@@ -10,7 +10,8 @@ async def writer_endpoint(request: WriterRequest):
         system_prompt = (
             f"You are a professional AI writer and translator. "
             f"Generate a {request.target_output} about the following topic. "
-            f"Tone: {request.tone}. Language: {request.language}. Length: {request.length}."
+            f"Tone: {request.tone}. Language: {request.language}. Length: {request.length}. "
+            f"CRITICAL: Do NOT use any Markdown formatting, bolding, italics, asterisks, or code blocks. Return ONLY pure, unformatted plain text."
         )
 
         messages = [
