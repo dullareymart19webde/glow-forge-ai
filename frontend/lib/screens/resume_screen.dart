@@ -1,5 +1,5 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/providers.dart';
 
@@ -51,6 +51,156 @@ class _ResumeScreenState extends ConsumerState<ResumeScreen> {
     }
   }
 
+  Widget _buildResumeView() {
+    final info = _output!['personal_info'] ?? {};
+    final summary = _output!['summary'] ?? '';
+    final edu = _output!['education'] as List<dynamic>? ?? [];
+    final exp = _output!['experience'] as List<dynamic>? ?? [];
+    final skills = _output!['skills'] as List<dynamic>? ?? [];
+
+    return SingleChildScrollView(
+      child: Card(
+        color: Colors.white,
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(
+                          info['name'] ?? 'John Doe',
+                          style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black87),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          info['email'] ?? 'email@example.com',
+                          style: TextStyle(fontSize: 14, color: Colors.blue[700]),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.copy, color: Colors.black54),
+                    tooltip: 'Copy Resume Text',
+                    onPressed: () {
+                      final sb = StringBuffer();
+                      sb.writeln(info['name'] ?? 'John Doe');
+                      sb.writeln(info['email'] ?? 'email@example.com');
+                      sb.writeln();
+                      if (summary.isNotEmpty) {
+                        sb.writeln('PROFESSIONAL SUMMARY');
+                        sb.writeln(summary);
+                        sb.writeln();
+                      }
+                      if (exp.isNotEmpty) {
+                        sb.writeln('EXPERIENCE');
+                        for (var e in exp) {
+                          sb.writeln('• $e');
+                        }
+                        sb.writeln();
+                      }
+                      if (edu.isNotEmpty) {
+                        sb.writeln('EDUCATION');
+                        for (var e in edu) {
+                          sb.writeln('• $e');
+                        }
+                        sb.writeln();
+                      }
+                      if (skills.isNotEmpty) {
+                        sb.writeln('SKILLS');
+                        sb.writeln(skills.join(', '));
+                      }
+                      
+                      Clipboard.setData(ClipboardData(text: sb.toString()));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Resume text copied!')),
+                      );
+                    },
+                  ),
+                ],
+              ),
+              const Divider(height: 32, thickness: 2),
+
+              // Summary
+              if (summary.isNotEmpty) ...[
+                const Text('PROFESSIONAL SUMMARY', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87, letterSpacing: 1.2)),
+                const SizedBox(height: 8),
+                Text(summary, style: const TextStyle(fontSize: 14, color: Colors.black87, height: 1.5)),
+                const SizedBox(height: 24),
+              ],
+
+              // Experience
+              if (exp.isNotEmpty) ...[
+                const Text('EXPERIENCE', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87, letterSpacing: 1.2)),
+                const SizedBox(height: 12),
+                ...exp.map((e) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12.0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('• ', style: TextStyle(fontSize: 16, color: Colors.black87)),
+                      Expanded(
+                        child: Text(e.toString(), style: const TextStyle(fontSize: 14, color: Colors.black87, height: 1.5)),
+                      ),
+                    ],
+                  ),
+                )),
+                const SizedBox(height: 12),
+              ],
+
+              // Education
+              if (edu.isNotEmpty) ...[
+                const Text('EDUCATION', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87, letterSpacing: 1.2)),
+                const SizedBox(height: 12),
+                ...edu.map((e) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('• ', style: TextStyle(fontSize: 16, color: Colors.black87)),
+                      Expanded(
+                        child: Text(e.toString(), style: const TextStyle(fontSize: 14, color: Colors.black87, height: 1.5)),
+                      ),
+                    ],
+                  ),
+                )),
+                const SizedBox(height: 12),
+              ],
+
+              // Skills
+              if (skills.isNotEmpty) ...[
+                const Text('SKILLS', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87, letterSpacing: 1.2)),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: skills.map((s) => Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.grey[300]!)
+                    ),
+                    child: Text(s.toString(), style: const TextStyle(fontSize: 12, color: Colors.black87, fontWeight: FontWeight.bold)),
+                  )).toList(),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 800;
@@ -84,32 +234,27 @@ class _ResumeScreenState extends ConsumerState<ResumeScreen> {
             decoration: const InputDecoration(labelText: 'Skills (comma separated)'),
           ),
           const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _isLoading ? null : _generateResume,
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple, padding: const EdgeInsets.all(16)),
-              child: _isLoading 
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text('Generate AI Resume', style: TextStyle(color: Colors.white)),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.document_scanner),
+                onPressed: _isLoading ? null : _generateResume,
+                label: _isLoading 
+                    ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Text('Generate Resume', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              ),
             ),
-          )
         ],
       ),
     );
 
     final outputSide = Container(
       width: double.infinity,
-      color: Colors.black12,
+      color: Colors.grey[900], // Dark background to make white paper pop
       padding: const EdgeInsets.all(16),
       child: _output == null
           ? const Center(child: Text('Fill out the form and generate to see your ATS Resume Data.', textAlign: TextAlign.center))
-          : SingleChildScrollView(
-              child: SelectableText(
-                const JsonEncoder.withIndent('  ').convert(_output),
-                style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
-              ),
-            ),
+          : _buildResumeView(),
     );
 
     return Scaffold(

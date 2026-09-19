@@ -4,7 +4,7 @@ from services.groq_service import generate_chat_response
 
 router = APIRouter()
 
-@router.post("/")
+@router.post("/generate/")
 async def writer_endpoint(request: WriterRequest):
     try:
         system_prompt = (

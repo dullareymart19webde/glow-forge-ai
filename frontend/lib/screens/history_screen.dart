@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/providers.dart';
 
-class HistoryScreen extends StatefulWidget {
+class HistoryScreen extends ConsumerStatefulWidget {
   const HistoryScreen({super.key});
 
   @override
-  State<HistoryScreen> createState() => _HistoryScreenState();
+  ConsumerState<HistoryScreen> createState() => _HistoryScreenState();
 }
 
-class _HistoryScreenState extends State<HistoryScreen> {
+class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   bool _isLoading = true;
   List<Map<String, dynamic>> _sessions = [];
 
@@ -19,28 +20,31 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Future<void> _loadSessions() async {
-    final user = Supabase.instance.client.auth.currentUser;
-    if (user == null) {
-      setState(() { _isLoading = false; });
-      return;
-    }
-
     try {
-      final response = await Supabase.instance.client
-          .from('chat_sessions')
-          .select('id, session_title, created_at')
-          .eq('user_id', user.id)
-          .order('created_at', ascending: false);
+      final appwrite = ref.read(appwriteProvider);
+      final user = await appwrite.getCurrentUser();
+      if (user == null) {
+        setState(() { _isLoading = false; });
+        return;
+      }
+
+      final sessions = await appwrite.getUserSessions(user.$id);
 
       setState(() {
-        _sessions = List<Map<String, dynamic>>.from(response);
+        _sessions = sessions.map((doc) => {
+          'id': doc.data['session_id'],
+          'session_title': doc.data['session_title'],
+          'created_at': doc.$createdAt,
+        }).toList();
       });
     } catch (e) {
       debugPrint('Error loading sessions: $e');
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 

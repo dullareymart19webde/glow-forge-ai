@@ -3,12 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:uuid/uuid.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../providers/providers.dart';
-import 'writer_screen.dart';
-import 'resume_screen.dart';
-import 'photo_screen.dart';
-import 'auth_screen.dart';
 import 'history_screen.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
@@ -26,12 +21,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   bool _isLoading = false;
   bool _isInitializing = true;
   String? _dbSessionId;
-  final String _sessionId = const Uuid().v4(); // Unique per session
+  String _sessionId = const Uuid().v4(); // Unique per session
   
-  String? get _userId {
-    final user = Supabase.instance.client.auth.currentUser;
-    return user?.id;
-  }
+  String? _userId;
 
   @override
   void initState() {
@@ -40,39 +32,35 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Future<void> _loadHistory() async {
-    final uId = _userId;
-    if (uId == null) {
-      if (mounted) {
-        setState(() {
-          _isInitializing = false;
-        });
-      }
-      return;
-    }
-
     try {
-      final sessions = await Supabase.instance.client
-          .from('chat_sessions')
-          .select('id, created_at')
-          .eq('user_id', uId)
-          .order('created_at', ascending: false)
-          .limit(1);
+      final appwrite = ref.read(appwriteProvider);
+      final user = await appwrite.getCurrentUser();
+      
+      if (user == null) {
+        if (mounted) {
+          setState(() {
+            _isInitializing = false;
+          });
+        }
+        return;
+      }
+      
+      _userId = user.$id;
+
+      final sessions = await appwrite.getUserSessions(user.$id);
 
       if (sessions.isNotEmpty) {
-        final sessionId = sessions.first['id'] as String;
+        // Appwrite creates $id for documents
+        final sessionId = sessions.first.data['session_id'] as String;
         setState(() {
           _dbSessionId = sessionId;
         });
 
-        final messages = await Supabase.instance.client
-            .from('chat_messages')
-            .select('sender_role, message_content, created_at')
-            .eq('session_id', sessionId)
-            .order('created_at', ascending: true);
+        final messages = await appwrite.getSessionMessages(sessionId);
 
         final loadedHistory = messages.map<Map<String, String>>((msg) => {
-          'role': msg['sender_role'] == 'ai' ? 'assistant' : 'user',
-          'content': msg['message_content'] as String,
+          'role': msg.data['sender_role'] == 'ai' ? 'assistant' : 'user',
+          'content': msg.data['message_content'] as String,
         }).toList();
 
         setState(() {
@@ -117,36 +105,32 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _scrollToBottom();
 
     try {
+      final appwrite = ref.read(appwriteProvider);
+      
       if (_dbSessionId == null && _userId != null) {
-        final sessionResponse = await Supabase.instance.client.from('chat_sessions').insert({
-          'user_id': _userId!,
-          'session_title': 'Chat Session',
-        }).select('id').single();
-        _dbSessionId = sessionResponse['id'] as String;
+        await appwrite.createChatSession(_sessionId, _userId!, 'Chat Session');
+        _dbSessionId = _sessionId;
       }
 
-      if (_dbSessionId != null) {
-        await Supabase.instance.client.from('chat_messages').insert({
-          'session_id': _dbSessionId,
-          'sender_role': 'user',
-          'message_content': text,
-        });
+      if (_dbSessionId != null && _userId != null) {
+        await appwrite.saveChatMessage(_dbSessionId!, _userId!, 'user', text);
       }
 
       final api = ref.read(apiProvider);
-      final response = await api.chat(_sessionId, _userId ?? "test-user-id", text, _chatHistory);
+      final activeSessionId = _dbSessionId ?? _sessionId;
+      final response = await api.chat(activeSessionId, _userId ?? "test-user-id", text, _chatHistory);
       
-      if (_dbSessionId != null) {
-        await Supabase.instance.client.from('chat_messages').insert({
-          'session_id': _dbSessionId,
-          'sender_role': 'ai',
-          'message_content': response,
-        });
-      }
-
       setState(() {
         _chatHistory = [..._chatHistory, {'role': 'assistant', 'content': response}];
       });
+
+      if (_dbSessionId != null && _userId != null) {
+        try {
+          await appwrite.saveChatMessage(_dbSessionId!, _userId!, 'ai', response);
+        } catch (e) {
+          debugPrint('Failed to save to database, but message was received: $e');
+        }
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
@@ -159,65 +143,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
-  void _showFeatureMenu() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(width: 40, height: 5, decoration: BoxDecoration(color: Colors.grey[600], borderRadius: BorderRadius.circular(10))),
-                const SizedBox(height: 16),
-                const Text('Features', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                ListTile(
-                  leading: const Icon(Icons.edit_document, color: Colors.deepPurpleAccent),
-                  title: const Text('AI Writer'),
-                  subtitle: const Text('Draft emails, essays, and stories'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const WriterScreen()));
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.work, color: Colors.deepPurpleAccent),
-                  title: const Text('Resume Builder'),
-                  subtitle: const Text('Generate an ATS-friendly resume'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const ResumeScreen()));
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.photo_filter, color: Colors.deepPurpleAccent),
-                  title: const Text('Photo Enhancer'),
-                  subtitle: const Text('Remove backgrounds and enhance images'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const PhotoScreen()));
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
 
   Widget _buildSuggestionChip(String text) {
     return ActionChip(
-      label: Text(text),
+      label: Text(text, style: const TextStyle(fontWeight: FontWeight.w500)),
       onPressed: () {
         _controller.text = text;
         _sendMessage();
       },
-      backgroundColor: Colors.grey[800],
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      backgroundColor: const Color(0xFF1E1E1E),
+      side: const BorderSide(color: Color(0xFF333333)),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
     );
   }
 
@@ -263,21 +200,51 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset('assets/logo.png', width: 100, height: 100),
-            const SizedBox(height: 16),
-            const Text('GlowForge AI', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
-            const SizedBox(height: 32),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF6C63FF), Color(0xFFFF6584)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF6C63FF).withAlpha(77), // 0.3 * 255
+                    blurRadius: 30,
+                    spreadRadius: 5,
+                  ),
+                ],
+              ),
+              child: Image.asset('assets/logo.png', width: 64, height: 64),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'GlowForge AI',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'How can I help you today?',
+              style: TextStyle(fontSize: 16, color: Colors.grey[400]),
+            ),
+            const SizedBox(height: 48),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
               child: Wrap(
                 alignment: WrapAlignment.center,
-                spacing: 8,
-                runSpacing: 8,
+                spacing: 12,
+                runSpacing: 12,
                 children: [
-                  _buildSuggestionChip('Draft a professional email'),
-                  _buildSuggestionChip('Explain Quantum Physics'),
-                  _buildSuggestionChip('Tell me a programming joke'),
-                  _buildSuggestionChip('Write a sci-fi short story'),
+                  _buildSuggestionChip('Draft an email 📧'),
+                  _buildSuggestionChip('Explain Quantum Physics ⚛️'),
+                  _buildSuggestionChip('Write a story ✍️'),
+                  _buildSuggestionChip('Write Python code 💻'),
                 ],
               ),
             )
@@ -310,6 +277,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               setState(() {
                 _chatHistory = [];
                 _dbSessionId = null;
+                _sessionId = const Uuid().v4(); // Regenerate!
               });
             },
           )
@@ -348,20 +316,37 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                               const SizedBox(width: 8),
                             ],
                             Container(
-                              padding: const EdgeInsets.all(12),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                               decoration: BoxDecoration(
-                                color: isUser ? Colors.deepPurple : Colors.grey[800],
+                                gradient: isUser ? const LinearGradient(
+                                  colors: [Color(0xFF6C63FF), Color(0xFF5A52D5)],
+                                ) : null,
+                                color: isUser ? null : const Color(0xFF1E1E1E),
                                 borderRadius: BorderRadius.only(
-                                  topLeft: const Radius.circular(16),
-                                  topRight: const Radius.circular(16),
-                                  bottomLeft: Radius.circular(isUser ? 16 : 4),
-                                  bottomRight: Radius.circular(isUser ? 4 : 16),
+                                  topLeft: const Radius.circular(20),
+                                  topRight: const Radius.circular(20),
+                                  bottomLeft: Radius.circular(isUser ? 20 : 4),
+                                  bottomRight: Radius.circular(isUser ? 4 : 20),
                                 ),
+                                boxShadow: isUser ? [
+                                  BoxShadow(
+                                    color: const Color(0xFF6C63FF).withAlpha(51),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 4),
+                                  )
+                                ] : null,
                               ),
-                              constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7),
+                              constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
                               child: isUser 
-                                  ? Text(msg['content'] ?? '', style: const TextStyle(color: Colors.white))
-                                  : MarkdownBody(data: msg['content'] ?? ''),
+                                  ? Text(msg['content'] ?? '', style: const TextStyle(color: Colors.white, fontSize: 15))
+                                  : MarkdownBody(
+                                      data: msg['content'] ?? '',
+                                      styleSheet: MarkdownStyleSheet(
+                                        p: const TextStyle(fontSize: 15, color: Colors.white70),
+                                        code: TextStyle(backgroundColor: Colors.black26, color: Colors.greenAccent[100]),
+                                        codeblockDecoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(8)),
+                                      ),
+                                    ),
                             ),
                           ],
                         ),
@@ -373,12 +358,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             padding: const EdgeInsets.all(16.0),
             child: Row(
               children: [
-                IconButton(
-                  icon: const Icon(Icons.add_circle, color: Colors.grey, size: 28),
-                  onPressed: _showFeatureMenu,
-                  tooltip: 'Features',
-                ),
-                const SizedBox(width: 8),
                 Expanded(
                   child: TextField(
                     controller: _controller,

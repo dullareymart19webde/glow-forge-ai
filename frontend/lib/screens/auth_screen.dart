@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'chat_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:appwrite/appwrite.dart';
+import 'home_screen.dart';
+import '../providers/providers.dart';
 
-class AuthScreen extends StatefulWidget {
+class AuthScreen extends ConsumerStatefulWidget {
   const AuthScreen({super.key});
 
   @override
-  State<AuthScreen> createState() => _AuthScreenState();
+  ConsumerState<AuthScreen> createState() => _AuthScreenState();
 }
 
-class _AuthScreenState extends State<AuthScreen> {
+class _AuthScreenState extends ConsumerState<AuthScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _nameController = TextEditingController();
@@ -34,28 +36,32 @@ class _AuthScreenState extends State<AuthScreen> {
     });
 
     try {
+      final appwrite = ref.read(appwriteProvider);
+      
       if (_isLogin) {
-        await Supabase.instance.client.auth.signInWithPassword(
-          email: email,
-          password: password,
-        );
+        await appwrite.signIn(email, password);
       } else {
-        await Supabase.instance.client.auth.signUp(
-          email: email,
-          password: password,
-          data: {'full_name': name},
-        );
+        await appwrite.signUp(email, password, name);
       }
 
       if (mounted) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const ChatScreen()),
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
         );
       }
-    } on AuthException catch (e) {
+    } on AppwriteException catch (e) {
+      if (e.message?.contains('prohibited when a session is active') == true) {
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const HomeScreen()),
+          );
+        }
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message)),
+        SnackBar(content: Text(e.message ?? 'Authentication error')),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

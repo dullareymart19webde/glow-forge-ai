@@ -1,11 +1,12 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
 
 class ApiService {
-  // We use localtunnel so real physical phones can reach your computer
-  final String baseUrl = 'https://glowforge-ai-app-test.loca.lt/api';
+  
+  // IMPORTANT: For Android APK on real phone, use your local network IP (192.168.254.113)
+  // For Android emulator, use 10.0.2.2. For Web, use 127.0.0.1.
+  final String baseUrl = 'http://192.168.254.113:8000/api';
 
   ApiService();
 
@@ -71,15 +72,26 @@ class ApiService {
   }
 
   Future<List<int>> processImage(XFile imageFile, String endpoint) async {
-    var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/image/$endpoint'));
-    request.headers['Bypass-Tunnel-Reminder'] = 'true';
-    
-    request.files.add(await http.MultipartFile.fromPath('file', imageFile.path));
-    
-    final response = await request.send();
+    final bytes = await imageFile.readAsBytes();
+    final base64Image = base64Encode(bytes);
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/image/$endpoint'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Bypass-Tunnel-Reminder': 'true',
+      },
+      body: jsonEncode({
+        'image_base64': base64Image,
+      }),
+    );
+
     if (response.statusCode == 200) {
-      return await response.stream.toBytes();
+      final jsonResponse = jsonDecode(response.body);
+      final outputBase64 = jsonResponse['image_base64'] as String;
+      return base64Decode(outputBase64);
     }
-    throw Exception('Failed to process image');
+    
+    throw Exception('Failed to process image: ${response.statusCode} ${response.body}');
   }
 }
