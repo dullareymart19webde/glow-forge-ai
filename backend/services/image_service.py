@@ -1,12 +1,15 @@
 import io
 import cv2
 import numpy as np
-from rembg import remove
+from rembg import remove, new_session
 from PIL import Image
 
+# Initialize the lightweight model session globally so it doesn't redownload every request
+_session = new_session("u2netp")
+
 def remove_background(image_bytes: bytes) -> bytes:
-    """Removes the background from the provided image bytes using rembg."""
-    output_image = remove(image_bytes)
+    """Removes the background from the provided image bytes using rembg (lightweight model)."""
+    output_image = remove(image_bytes, session=_session)
     return output_image
 
 def auto_enhance(image_bytes: bytes) -> bytes:
