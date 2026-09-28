@@ -33,19 +33,49 @@ export default function PhotoPage() {
     setIsLoading(true);
     setError(null);
 
-    const formData = new FormData();
-    formData.append('file', selectedImage);
-    formData.append('type', type);
-
     try {
-      const response = await fetch('https://glow-forge-ai.onrender.com/api/image/process', {
+      // 1. Convert File to Base64
+      const buffer = await selectedImage.arrayBuffer();
+      const bytes = new Uint8Array(buffer);
+      let binary = '';
+      for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      const base64Image = window.btoa(binary);
+
+      // 2. Map type to endpoint
+      const endpointMap: Record<string, string> = {
+        'remove-bg': '/remove-bg',
+        'enhance': '/enhance',
+        'sharpen': '/sharpen',
+        'sketch': '/sketch',
+        'black-white': '/black-white'
+      };
+
+      // 3. Hit the backend
+      const response = await fetch(`https://glow-forge-ai.onrender.com/api/image${endpointMap[type]}`, {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          image_base64: base64Image
+        }),
       });
 
       if (!response.ok) throw new Error('Failed to process image');
 
-      const blob = await response.blob();
+      const data = await response.json();
+      
+      // 4. Convert base64 response back to blob URL for preview
+      const byteCharacters = atob(data.image_base64);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'image/png' });
+      
       setProcessedUrl(URL.createObjectURL(blob));
     } catch (error) {
       setError('The Forge failed to process this image. The file might be too large, or our servers are busy. Please try another photo.');
