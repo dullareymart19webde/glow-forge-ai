@@ -76,8 +76,11 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('GlowForge AI'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: const Text('GLOWFORGE AI', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 2.0)),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -97,71 +100,88 @@ class HomeScreen extends ConsumerWidget {
           )
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Welcome back!',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF1E1136),
+              Color(0xFF381460),
+              Color(0xFF1E1136),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 10.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 20),
+                const Text(
+                  'Welcome back!',
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'What would you like to forge today?',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.purple[200],
+                  ),
+                ),
+                const SizedBox(height: 32),
+                Expanded(
+                  child: GridView.count(
+                    crossAxisCount: MediaQuery.of(context).size.width > 800 ? 4 : 2,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    childAspectRatio: MediaQuery.of(context).size.width > 800 ? 1.0 : 0.85,
+                    children: [
+                      _buildFeatureCard(
+                        context,
+                        title: 'AI Chat',
+                        subtitle: 'Converse, learn, and explore ideas.',
+                        icon: Icons.chat_bubble_outline,
+                        color: Colors.purpleAccent,
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatScreen())),
+                      ),
+                      _buildFeatureCard(
+                        context,
+                        title: 'AI Writer',
+                        subtitle: 'Draft emails, essays, and stories.',
+                        icon: Icons.edit_document,
+                        color: Colors.pinkAccent,
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WriterScreen())),
+                      ),
+                      _buildFeatureCard(
+                        context,
+                        title: 'Resume AI',
+                        subtitle: 'Generate ATS-friendly resumes.',
+                        icon: Icons.work_outline,
+                        color: Colors.tealAccent,
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ResumeScreen())),
+                      ),
+                      _buildFeatureCard(
+                        context,
+                        title: 'Photo Studio',
+                        subtitle: 'Enhance, sketch, and remove BGs.',
+                        icon: Icons.photo_filter,
+                        color: Colors.amberAccent,
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PhotoScreen())),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            const Text(
-              'What would you like to forge today?',
-              style: TextStyle(
-                fontSize: 15,
-                color: Colors.white54,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Expanded(
-              child: GridView.count(
-                crossAxisCount: MediaQuery.of(context).size.width > 800 ? 4 : 2,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                childAspectRatio: MediaQuery.of(context).size.width > 800 ? 1.0 : 0.8,
-                children: [
-                  _buildFeatureCard(
-                    context,
-                    title: 'AI Chat',
-                    subtitle: 'Converse, learn, and explore ideas.',
-                    icon: Icons.chat_bubble_outline,
-                    color: const Color(0xFF6C63FF),
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatScreen())),
-                  ),
-                  _buildFeatureCard(
-                    context,
-                    title: 'AI Writer',
-                    subtitle: 'Draft emails, essays, and stories.',
-                    icon: Icons.edit_document,
-                    color: const Color(0xFFFF6584),
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WriterScreen())),
-                  ),
-                  _buildFeatureCard(
-                    context,
-                    title: 'Resume Builder',
-                    subtitle: 'Generate ATS-friendly resumes.',
-                    icon: Icons.work_outline,
-                    color: const Color(0xFF4CAF50),
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ResumeScreen())),
-                  ),
-                  _buildFeatureCard(
-                    context,
-                    title: 'Photo Studio',
-                    subtitle: 'Enhance, sketch, and remove BGs.',
-                    icon: Icons.photo_filter,
-                    color: const Color(0xFFFFC107),
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PhotoScreen())),
-                  ),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

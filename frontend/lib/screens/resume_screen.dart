@@ -210,40 +210,36 @@ class _ResumeScreenState extends ConsumerState<ResumeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Personal Info', style: TextStyle(fontWeight: FontWeight.bold)),
-          TextField(controller: _nameCtrl, decoration: const InputDecoration(labelText: 'Full Name')),
-          TextField(controller: _emailCtrl, decoration: const InputDecoration(labelText: 'Email')),
-          const SizedBox(height: 16),
-          const Text('Education', style: TextStyle(fontWeight: FontWeight.bold)),
-          TextField(
-            controller: _educationCtrl, 
-            decoration: const InputDecoration(labelText: 'Degree & University'),
-            maxLines: 2,
-          ),
-          const SizedBox(height: 16),
-          const Text('Experience', style: TextStyle(fontWeight: FontWeight.bold)),
-          TextField(
-            controller: _experienceCtrl, 
-            decoration: const InputDecoration(labelText: 'Recent Job & Description'),
-            maxLines: 3,
-          ),
-          const SizedBox(height: 16),
-          const Text('Skills', style: TextStyle(fontWeight: FontWeight.bold)),
-          TextField(
-            controller: _skillsCtrl, 
-            decoration: const InputDecoration(labelText: 'Skills (comma separated)'),
-          ),
+          const Text('Personal Info', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+          const SizedBox(height: 8),
+          _buildTextField('Full Name', _nameCtrl),
+          _buildTextField('Email', _emailCtrl),
+          const SizedBox(height: 8),
+          const Text('Education', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+          const SizedBox(height: 8),
+          _buildTextField('Degree & University', _educationCtrl, maxLines: 2),
+          const SizedBox(height: 8),
+          const Text('Experience', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+          const SizedBox(height: 8),
+          _buildTextField('Recent Job & Description', _experienceCtrl, maxLines: 3),
+          const SizedBox(height: 8),
+          const Text('Skills', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+          const SizedBox(height: 8),
+          _buildTextField('Skills (comma separated)', _skillsCtrl),
           const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                icon: const Icon(Icons.document_scanner),
-                onPressed: _isLoading ? null : _generateResume,
-                label: _isLoading 
-                    ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : const Text('Generate Resume', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.document_scanner, color: Colors.white),
+              onPressed: _isLoading ? null : _generateResume,
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                backgroundColor: Colors.tealAccent.shade700,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
+              label: const Text('Forge Resume', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.5)),
             ),
+          ),
         ],
       ),
     );
@@ -252,28 +248,110 @@ class _ResumeScreenState extends ConsumerState<ResumeScreen> {
       width: double.infinity,
       color: Colors.grey[900], // Dark background to make white paper pop
       padding: const EdgeInsets.all(16),
-      child: _output == null
-          ? const Center(child: Text('Fill out the form and generate to see your ATS Resume Data.', textAlign: TextAlign.center))
-          : _buildResumeView(),
-    );
-
-    return Scaffold(
-      appBar: AppBar(title: const Text('AI Resume Builder')),
-      body: isMobile
-          ? SingleChildScrollView(
+      child: _isLoading 
+          ? Center(
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  formSide,
-                  SizedBox(height: 400, child: outputSide),
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.tealAccent.shade700.withAlpha(50),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.tealAccent.shade700.withAlpha(100),
+                          blurRadius: 30,
+                          spreadRadius: 10,
+                        )
+                      ]
+                    ),
+                    child: CircularProgressIndicator(
+                      color: Colors.tealAccent.shade400,
+                      strokeWidth: 4,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Forging Resume...',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: 2.0,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Parsing AI experience',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.tealAccent[100],
+                    ),
+                  ),
                 ],
               ),
             )
-          : Row(
-              children: [
-                Expanded(flex: 1, child: formSide),
-                Expanded(flex: 1, child: outputSide),
-              ],
-            ),
+          : _output == null
+              ? const Center(child: Text('Fill out the form and generate to see your ATS Resume Data.', style: TextStyle(color: Colors.white70), textAlign: TextAlign.center))
+              : _buildResumeView(),
+    );
+
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF1E1136),
+            Color(0xFF381460),
+            Color(0xFF1E1136),
+          ],
+        ),
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          title: const Text('AI Resume Builder', style: TextStyle(fontWeight: FontWeight.bold)),
+        ),
+        body: SafeArea(
+          child: isMobile
+              ? SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      formSide,
+                      SizedBox(height: 600, child: outputSide),
+                    ],
+                  ),
+                )
+              : Row(
+                  children: [
+                    Expanded(flex: 1, child: formSide),
+                    Expanded(flex: 1, child: outputSide),
+                  ],
+                ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(String label, TextEditingController controller, {int maxLines = 1}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: TextField(
+        controller: controller,
+        maxLines: maxLines,
+        style: const TextStyle(color: Colors.white),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: TextStyle(color: Colors.purple[200]),
+          filled: true,
+          fillColor: Colors.black.withAlpha(50),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        ),
+      ),
     );
   }
 }

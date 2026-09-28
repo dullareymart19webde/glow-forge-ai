@@ -256,128 +256,159 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('GlowForge AI'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.history),
-            tooltip: 'Chat History',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const HistoryScreen()),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Clear Chat',
-            onPressed: () {
-              setState(() {
-                _chatHistory = [];
-                _dbSessionId = null;
-                _sessionId = const Uuid().v4(); // Regenerate!
-              });
-            },
-          )
-        ],
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF1E1136),
+            Color(0xFF381460),
+            Color(0xFF1E1136),
+          ],
+        ),
       ),
-      body: _isInitializing 
-        ? const Center(child: CircularProgressIndicator(color: Colors.deepPurpleAccent))
-        : Column(
-        children: [
-          Expanded(
-            child: _chatHistory.isEmpty
-                ? _buildEmptyState()
-                : ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _chatHistory.length + (_isLoading ? 1 : 0),
-                    itemBuilder: (context, index) {
-                      if (_isLoading && index == _chatHistory.length) {
-                        return _buildTypingIndicator();
-                      }
-
-                      final msg = _chatHistory[index];
-                      final isUser = msg['role'] == 'user';
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 6),
-                        child: Row(
-                          mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (!isUser) ...[
-                              const CircleAvatar(
-                                backgroundColor: Colors.transparent,
-                                backgroundImage: AssetImage('assets/logo.png'),
-                                radius: 16,
-                              ),
-                              const SizedBox(width: 8),
-                            ],
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                              decoration: BoxDecoration(
-                                gradient: isUser ? const LinearGradient(
-                                  colors: [Color(0xFF6C63FF), Color(0xFF5A52D5)],
-                                ) : null,
-                                color: isUser ? null : const Color(0xFF1E1E1E),
-                                borderRadius: BorderRadius.only(
-                                  topLeft: const Radius.circular(20),
-                                  topRight: const Radius.circular(20),
-                                  bottomLeft: Radius.circular(isUser ? 20 : 4),
-                                  bottomRight: Radius.circular(isUser ? 4 : 20),
-                                ),
-                                boxShadow: isUser ? [
-                                  BoxShadow(
-                                    color: const Color(0xFF6C63FF).withAlpha(51),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 4),
-                                  )
-                                ] : null,
-                              ),
-                              constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
-                              child: isUser 
-                                  ? Text(msg['content'] ?? '', style: const TextStyle(color: Colors.white, fontSize: 15))
-                                  : MarkdownBody(
-                                      data: msg['content'] ?? '',
-                                      styleSheet: MarkdownStyleSheet(
-                                        p: const TextStyle(fontSize: 15, color: Colors.white70),
-                                        code: TextStyle(backgroundColor: Colors.black26, color: Colors.greenAccent[100]),
-                                        codeblockDecoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(8)),
-                                      ),
-                                    ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    decoration: InputDecoration(
-                      hintText: 'Message GlowForge...',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(24)),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    ),
-                    onSubmitted: (_) => _sendMessage(),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  icon: const Icon(Icons.send, color: Colors.deepPurpleAccent),
-                  onPressed: _sendMessage,
-                )
-              ],
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          title: const Text('GlowForge Chat', style: TextStyle(fontWeight: FontWeight.bold)),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.history),
+              tooltip: 'Chat History',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const HistoryScreen()),
+                );
+              },
             ),
-          )
-        ],
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              tooltip: 'Clear Chat',
+              onPressed: () {
+                setState(() {
+                  _chatHistory = [];
+                  _dbSessionId = null;
+                  _sessionId = const Uuid().v4(); // Regenerate!
+                });
+              },
+            )
+          ],
+        ),
+        body: _isInitializing 
+          ? const Center(child: CircularProgressIndicator(color: Colors.purpleAccent))
+          : Column(
+          children: [
+            Expanded(
+              child: _chatHistory.isEmpty
+                  ? _buildEmptyState()
+                  : ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.all(16),
+                      itemCount: _chatHistory.length + (_isLoading ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        if (_isLoading && index == _chatHistory.length) {
+                          return _buildTypingIndicator();
+                        }
+  
+                        final msg = _chatHistory[index];
+                        final isUser = msg['role'] == 'user';
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          child: Row(
+                            mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (!isUser) ...[
+                                const CircleAvatar(
+                                  backgroundColor: Colors.transparent,
+                                  backgroundImage: AssetImage('assets/logo.png'),
+                                  radius: 16,
+                                ),
+                                const SizedBox(width: 8),
+                              ],
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                decoration: BoxDecoration(
+                                  gradient: isUser ? const LinearGradient(
+                                    colors: [Color(0xFF9D4EDD), Color(0xFF7B2CBF)],
+                                  ) : null,
+                                  color: isUser ? null : Colors.black.withAlpha(80),
+                                  border: isUser ? null : Border.all(color: Colors.purpleAccent.withAlpha(50), width: 1),
+                                  borderRadius: BorderRadius.only(
+                                    topLeft: const Radius.circular(20),
+                                    topRight: const Radius.circular(20),
+                                    bottomLeft: Radius.circular(isUser ? 20 : 4),
+                                    bottomRight: Radius.circular(isUser ? 4 : 20),
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: isUser ? const Color(0xFF9D4EDD).withAlpha(51) : Colors.purpleAccent.withAlpha(20),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
+                                    )
+                                  ],
+                                ),
+                                constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+                                child: isUser 
+                                    ? Text(msg['content'] ?? '', style: const TextStyle(color: Colors.white, fontSize: 15))
+                                    : MarkdownBody(
+                                        data: msg['content'] ?? '',
+                                        styleSheet: MarkdownStyleSheet(
+                                          p: const TextStyle(fontSize: 15, color: Colors.white70),
+                                          code: TextStyle(backgroundColor: Colors.black26, color: Colors.greenAccent),
+                                          codeblockDecoration: BoxDecoration(color: Colors.black45, borderRadius: BorderRadius.circular(8)),
+                                        ),
+                                      ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+            ),
+            Container(
+              padding: const EdgeInsets.all(16.0),
+              decoration: BoxDecoration(
+                color: Colors.black.withAlpha(50),
+                border: Border(top: BorderSide(color: Colors.purpleAccent.withAlpha(30))),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _controller,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        hintText: 'Message GlowForge...',
+                        hintStyle: TextStyle(color: Colors.purple[200]),
+                        filled: true,
+                        fillColor: Colors.white.withAlpha(15),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
+                      onSubmitted: (_) => _sendMessage(),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(colors: [Color(0xFF9D4EDD), Color(0xFF7B2CBF)]),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.send, color: Colors.white),
+                      onPressed: _sendMessage,
+                    ),
+                  )
+                ],
+              ),
+            )
+          ],
+        ),
       ),
     );
   }

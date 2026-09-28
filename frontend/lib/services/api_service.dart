@@ -1,12 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
-
 class ApiService {
-  
-  // IMPORTANT: For Android APK on real phone, use your local network IP (192.168.254.113)
-  // For Android emulator, use 10.0.2.2. For Web, use 127.0.0.1.
-  final String baseUrl = 'http://192.168.254.113:8000/api';
+  // Production Cloud URL (Independent!)
+  final String baseUrl = 'https://glow-forge-ai.onrender.com/api';
 
   ApiService();
 
