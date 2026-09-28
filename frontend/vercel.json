@@ -1,0 +1,5 @@
+{
+  "framework": null,
+  "buildCommand": "if [ -d \"flutter\" ]; then rm -rf flutter; fi; git clone https://github.com/flutter/flutter.git -b stable; ./flutter/bin/flutter build web",
+  "outputDirectory": "build/web"
+}
