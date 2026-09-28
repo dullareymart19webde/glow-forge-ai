@@ -25,3 +25,29 @@ body {
 .glow-effect {
   box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
 }
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(168, 85, 247, 0.2);
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 85, 247, 0.5);
+}
+
+/* Hide scrollbar for specific elements if needed using Tailwind scrollbar-hide, but we style the global one above */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}

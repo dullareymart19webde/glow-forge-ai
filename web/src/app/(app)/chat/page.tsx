@@ -178,7 +178,7 @@ export default function ChatPage() {
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto bg-[#1a0f2e]/60 border border-white/5 shadow-2xl rounded-3xl p-4 md:p-8 mb-4 space-y-6 scrollbar-hide">
+      <div className="flex-1 overflow-y-auto bg-[#1a0f2e]/60 border border-white/5 shadow-2xl rounded-3xl p-4 md:p-8 mb-4 space-y-6">
         {isInitializing ? (
           <div className="h-full flex items-center justify-center">
             <Loader2 className="w-8 h-8 animate-spin text-purple-400" />
