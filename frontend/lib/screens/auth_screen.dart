@@ -94,21 +94,23 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(32.0),
-            child: Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.black.withAlpha(80),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: Colors.purpleAccent.withAlpha(50), width: 1),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.purpleAccent.withAlpha(20),
-                    blurRadius: 30,
-                    spreadRadius: 5,
-                  ),
-                ],
-              ),
-              child: Column(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 450),
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.black.withAlpha(80),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: Colors.purpleAccent.withAlpha(50), width: 1),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.purpleAccent.withAlpha(20),
+                      blurRadius: 30,
+                      spreadRadius: 5,
+                    ),
+                  ],
+                ),
+                child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -225,6 +227,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   ),
                 ],
               ),
+            ),
             ),
           ),
         ),
