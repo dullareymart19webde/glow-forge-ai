@@ -113,11 +113,12 @@ export default function ChatPage() {
       );
 
       // 2. Fetch AI response from Render Backend
-      const response = await fetch('https://glow-forge-ai.onrender.com/api/chat/ask', {
+      const response = await fetch('https://glow-forge-ai.onrender.com/api/chat/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          prompt: userMessage.content,
+          message: userMessage.content,
+          history: messages.map(m => ({ role: m.role, content: m.content })),
           session_id: sessionId,
           user_id: userId,
         }),

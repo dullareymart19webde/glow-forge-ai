@@ -16,21 +16,22 @@ export default function ResumePage() {
     setIsLoading(true);
     
     try {
-      const response = await fetch('https://glow-forge-ai.onrender.com/api/resume/build', {
+      const response = await fetch('https://glow-forge-ai.onrender.com/api/resume/generate/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          job_title: jobTitle,
-          experience: experience,
-          skills: skills,
-          education: education,
+          personal_info: { title: jobTitle },
+          experience: [experience],
+          skills: [skills],
+          education: [education],
         }),
       });
 
       if (!response.ok) throw new Error('API Error');
       
       const data = await response.json();
-      setOutput(data.resume);
+      // The backend returns a JSON string, we should stringify it beautifully for markdown
+      setOutput("```json\n" + JSON.stringify(data, null, 2) + "\n```");
     } catch (error) {
       setOutput('*Failed to reach the forge. Please try again later.*');
     } finally {

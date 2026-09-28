@@ -19,19 +19,22 @@ export default function WriterPage() {
     setIsLoading(true);
     
     try {
-      const response = await fetch('https://glow-forge-ai.onrender.com/api/writer/generate', {
+      const response = await fetch('https://glow-forge-ai.onrender.com/api/writer/generate/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           topic: topic,
-          target_type: target
+          target_output: target,
+          tone: 'professional',
+          language: 'English',
+          length: 'medium'
         }),
       });
 
       if (!response.ok) throw new Error('API Error');
       
       const data = await response.json();
-      setOutput(data.content);
+      setOutput(data.result);
     } catch (error) {
       setOutput('*Failed to reach the forge. Please try again later.*');
     } finally {
