@@ -131,7 +131,7 @@ export default function ChatPage() {
       const aiMessage: ChatMessage = {
         id: ID.unique(),
         role: 'model',
-        content: data.reply,
+        content: data.response, // Fixed from data.reply
       };
 
       setMessages((prev) => [...prev, aiMessage]);
@@ -163,6 +163,20 @@ export default function ChatPage() {
     }
   };
 
+  const handleSuggestionClick = (suggestion: string) => {
+    setInput(suggestion);
+    // Optionally auto-send:
+    // const formEvent = new Event('submit') as unknown as React.FormEvent;
+    // sendMessage(formEvent); // Actually, we'll just populate the input for now.
+  };
+
+  const suggestions = [
+    "Write a python script to scrape a website",
+    "Explain quantum computing to a 5 year old",
+    "How do I center a div in Tailwind CSS?",
+    "Give me 5 creative ideas for a tech startup"
+  ];
+
   return (
     <div className="flex flex-col h-full max-w-5xl mx-auto md:px-4">
       <div className="flex justify-between items-center mb-6 pt-4 px-4 md:px-0">
@@ -170,13 +184,24 @@ export default function ChatPage() {
           <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white to-purple-300 tracking-wider">GLOWFORGE CHAT</h1>
           <p className="text-sm text-purple-400/60 font-medium">Llama 3 Powered AI</p>
         </div>
-        <button 
-          onClick={clearChat}
-          title="Clear Chat"
-          className="p-2.5 rounded-full bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white transition-all border border-white/10 hover:border-purple-500/50 hover:shadow-[0_0_15px_rgba(168,85,247,0.3)]"
-        >
-          <RefreshCw size={18} />
-        </button>
+        <div className="flex gap-2">
+          {/* History button placeholder - could toggle a modal */}
+          <button 
+            title="Chat History"
+            className="p-2.5 rounded-full bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white transition-all border border-white/10 hover:border-purple-500/50 hover:shadow-[0_0_15px_rgba(168,85,247,0.3)] flex items-center gap-2 px-4"
+          >
+            <span className="text-sm font-medium hidden md:block">History</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
+          </button>
+          <button 
+            onClick={clearChat}
+            title="New Chat"
+            className="p-2.5 rounded-full bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white transition-all border border-white/10 hover:border-purple-500/50 hover:shadow-[0_0_15px_rgba(168,85,247,0.3)] flex items-center gap-2 px-4"
+          >
+            <span className="text-sm font-medium hidden md:block">New Chat</span>
+            <RefreshCw size={18} />
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto bg-[#1a0f2e]/60 border border-white/5 shadow-2xl rounded-3xl p-4 md:p-8 mb-4 space-y-6">
@@ -193,9 +218,23 @@ export default function ChatPage() {
               </div>
             </div>
             <h2 className="text-2xl font-bold text-white mb-3">How can I help you forge today?</h2>
-            <p className="text-gray-400 max-w-md text-sm leading-relaxed">
+            <p className="text-gray-400 max-w-md text-sm leading-relaxed mb-8">
               Ask me to write code, brainstorm ideas, analyze data, or summarize complex topics.
             </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-2xl">
+              {suggestions.map((suggestion, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => handleSuggestionClick(suggestion)}
+                  className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-purple-500/50 rounded-xl p-4 text-sm text-gray-300 hover:text-white transition-all text-left flex items-center gap-3 group"
+                >
+                  <div className="p-2 rounded-lg bg-purple-500/20 text-purple-400 group-hover:bg-purple-500 group-hover:text-white transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                  </div>
+                  {suggestion}
+                </button>
+              ))}
+            </div>
           </div>
         ) : (
           messages.map((msg) => (
