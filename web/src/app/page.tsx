@@ -56,9 +56,8 @@ export default function AuthPage() {
         className="glass-panel p-8 rounded-3xl w-full max-w-md"
       >
         <div className="flex justify-center mb-6">
-          <div className="w-20 h-20 rounded-full glow-effect flex items-center justify-center bg-purple-900/50">
-            {/* Fallback logo if we don't copy the asset immediately */}
-            <span className="text-3xl font-black text-white">G</span>
+          <div className="w-20 h-20 rounded-full glow-effect bg-purple-900/50 flex items-center justify-center shadow-[0_0_20px_rgba(168,85,247,0.5)] overflow-hidden">
+            <img src="/assets/logo.png" alt="GlowForge Logo" className="w-full h-full object-cover" />
           </div>
         </div>
 

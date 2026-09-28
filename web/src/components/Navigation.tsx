@@ -17,8 +17,8 @@ export function Navigation() {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 glass-panel md:relative md:w-64 md:h-screen md:flex-col p-4 flex justify-around md:justify-start gap-4">
       <div className="hidden md:flex items-center gap-4 p-4 mb-8">
-        <div className="w-10 h-10 rounded-full glow-effect bg-purple-900/50 flex items-center justify-center">
-          <span className="text-xl font-black text-white">G</span>
+        <div className="w-10 h-10 rounded-full glow-effect bg-purple-900/50 flex items-center justify-center overflow-hidden shadow-[0_0_15px_rgba(168,85,247,0.5)]">
+          <img src="/assets/logo.png" alt="Logo" className="w-full h-full object-cover" />
         </div>
         <span className="text-white font-bold tracking-widest">GLOWFORGE</span>
       </div>
