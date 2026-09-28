@@ -163,93 +163,93 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="flex flex-col h-full max-w-4xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-white tracking-widest">GLOWFORGE CHAT</h1>
+    <div className="flex flex-col h-full max-w-5xl mx-auto md:px-4">
+      <div className="flex justify-between items-center mb-6 pt-4 px-4 md:px-0">
+        <div>
+          <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white to-purple-300 tracking-wider">GLOWFORGE CHAT</h1>
+          <p className="text-sm text-purple-400/60 font-medium">Llama 3 Powered AI</p>
+        </div>
         <button 
           onClick={clearChat}
           title="Clear Chat"
-          className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-white transition-colors"
+          className="p-2.5 rounded-full bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white transition-all border border-white/10 hover:border-purple-500/50 hover:shadow-[0_0_15px_rgba(168,85,247,0.3)]"
         >
-          <RefreshCw size={20} />
+          <RefreshCw size={18} />
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto glass-panel rounded-3xl p-4 md:p-6 mb-4 space-y-6">
+      <div className="flex-1 overflow-y-auto bg-[#1a0f2e]/60 border border-white/5 shadow-2xl rounded-3xl p-4 md:p-8 mb-4 space-y-6 scrollbar-hide">
         {isInitializing ? (
           <div className="h-full flex items-center justify-center">
             <Loader2 className="w-8 h-8 animate-spin text-purple-400" />
           </div>
         ) : messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center px-4">
-            <div className="w-16 h-16 rounded-full glow-effect bg-purple-900/50 flex items-center justify-center mb-4">
-              <Bot size={32} className="text-purple-300" />
+            <div className="relative">
+              <div className="absolute inset-0 bg-purple-600 blur-3xl opacity-20 rounded-full"></div>
+              <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-purple-500/20 to-indigo-500/20 border border-white/10 flex items-center justify-center mb-6 relative z-10 shadow-2xl">
+                <Bot size={36} className="text-purple-300" strokeWidth={1.5} />
+              </div>
             </div>
-            <h2 className="text-xl font-bold text-white mb-2">How can I help you forge today?</h2>
-            <p className="text-purple-300/70 max-w-md">
+            <h2 className="text-2xl font-bold text-white mb-3">How can I help you forge today?</h2>
+            <p className="text-gray-400 max-w-md text-sm leading-relaxed">
               Ask me to write code, brainstorm ideas, analyze data, or summarize complex topics.
             </p>
           </div>
         ) : (
           messages.map((msg) => (
-            <div key={msg.id} className={`flex gap-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div key={msg.id} className={`flex gap-3 md:gap-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               {msg.role === 'model' && (
-                <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center shrink-0 mt-1">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shrink-0 shadow-lg mt-1">
                   <Bot size={18} className="text-white" />
                 </div>
               )}
               
-              <div className={`max-w-[85%] rounded-2xl p-4 ${
+              <div className={`max-w-[90%] md:max-w-[80%] rounded-2xl p-4 md:px-6 md:py-4 shadow-sm ${
                 msg.role === 'user' 
-                  ? 'bg-purple-600 text-white rounded-tr-sm' 
-                  : 'bg-white/10 text-gray-100 rounded-tl-sm border border-white/5'
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-tr-sm' 
+                  : 'bg-white/5 text-gray-200 rounded-tl-sm border border-white/10 backdrop-blur-sm'
               }`}>
                 {msg.role === 'user' ? (
-                  <p className="whitespace-pre-wrap">{msg.content}</p>
+                  <p className="whitespace-pre-wrap leading-relaxed text-sm md:text-base">{msg.content}</p>
                 ) : (
-                  <div className="prose prose-invert max-w-none prose-p:leading-relaxed prose-pre:bg-black/50 prose-pre:border prose-pre:border-white/10">
+                  <div className="prose prose-sm md:prose-base prose-invert max-w-none prose-p:leading-relaxed prose-pre:bg-black/50 prose-pre:border prose-pre:border-white/10 prose-headings:text-purple-300 prose-a:text-purple-400">
                     <ReactMarkdown>{msg.content}</ReactMarkdown>
                   </div>
                 )}
               </div>
-
-              {msg.role === 'user' && (
-                <div className="w-8 h-8 rounded-full bg-purple-900 flex items-center justify-center shrink-0 mt-1 border border-purple-500/30">
-                  <User size={18} className="text-white" />
-                </div>
-              )}
             </div>
           ))
         )}
         {isLoading && (
           <div className="flex gap-4 justify-start">
-            <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center shrink-0 mt-1">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shrink-0 shadow-lg mt-1">
               <Bot size={18} className="text-white" />
             </div>
-            <div className="bg-white/10 rounded-2xl rounded-tl-sm p-4 border border-white/5 flex items-center gap-2">
+            <div className="bg-white/5 rounded-2xl rounded-tl-sm p-4 px-6 border border-white/10 flex items-center gap-3 backdrop-blur-sm">
               <Loader2 size={16} className="animate-spin text-purple-400" />
-              <span className="text-purple-300 text-sm">Forging response...</span>
+              <span className="text-gray-400 text-sm font-medium tracking-wide">Forging response...</span>
             </div>
           </div>
         )}
         <div ref={messagesEndRef} />
       </div>
 
-      <form onSubmit={sendMessage} className="relative">
+      <form onSubmit={sendMessage} className="relative px-2 md:px-0">
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           disabled={isLoading || isInitializing}
           placeholder="Ask GlowForge..."
-          className="w-full bg-black/40 border border-purple-500/30 rounded-full py-4 pl-6 pr-16 text-white placeholder-purple-300/50 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all shadow-[0_0_20px_rgba(168,85,247,0.1)]"
+          className="w-full bg-[#1a0f2e]/80 backdrop-blur-xl border border-white/10 rounded-2xl py-4 pl-6 pr-16 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all shadow-xl"
         />
         <button
           type="submit"
           disabled={!input.trim() || isLoading || isInitializing}
-          className="absolute right-2 top-2 bottom-2 aspect-square rounded-full bg-purple-600 hover:bg-purple-500 text-white flex items-center justify-center transition-colors disabled:opacity-50 disabled:bg-purple-900"
+          className="absolute right-4 top-2 bottom-2 aspect-square rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-90 text-white flex items-center justify-center transition-all disabled:opacity-50 disabled:from-gray-700 disabled:to-gray-700"
         >
-          <Send size={18} className="ml-1" />
+          <Send size={18} className="ml-0.5" />
         </button>
       </form>
     </div>
