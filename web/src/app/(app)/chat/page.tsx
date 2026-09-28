@@ -5,12 +5,18 @@ import { appwriteConfig } from '@/lib/appwrite';
 import { ID, Query } from 'appwrite';
 import { v4 as uuidv4 } from 'uuid';
 import ReactMarkdown from 'react-markdown';
-import { Send, RefreshCw, Loader2, Bot, User } from 'lucide-react';
+import { Send, RefreshCw, Loader2, Bot, User, History, X, MessageSquare } from 'lucide-react';
 
 interface ChatMessage {
   id: string;
   role: 'user' | 'model';
   content: string;
+}
+
+interface ChatSession {
+  id: string;
+  title: string;
+  updatedAt: string;
 }
 
 export default function ChatPage() {
@@ -20,6 +26,12 @@ export default function ChatPage() {
   const [isInitializing, setIsInitializing] = useState(true);
   const [sessionId, setSessionId] = useState('');
   const [userId, setUserId] = useState('');
+  
+  // History state
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -81,6 +93,81 @@ export default function ChatPage() {
   const clearChat = () => {
     setMessages([]);
     setSessionId(uuidv4());
+  };
+
+  const loadHistory = async () => {
+    setIsHistoryOpen(true);
+    if (sessions.length > 0 || !userId) return;
+    setIsLoadingHistory(true);
+    
+    try {
+      const historyRes = await databases.listDocuments(
+        appwriteConfig.databaseId,
+        appwriteConfig.tableId,
+        [
+          Query.equal('user_id', userId),
+          Query.orderDesc('$createdAt'),
+          Query.limit(100)
+        ]
+      );
+      
+      const sessionMap = new Map<string, ChatSession>();
+      historyRes.documents.forEach(doc => {
+        if (!sessionMap.has(doc.session_id)) {
+          // Find the first user message for the title if possible
+          // But since it's desc, we just use whatever message is first in desc order
+          // which is the last message. To find the true title, we'd need to fetch ascending,
+          // but just using the first 30 chars of this doc is fine for a quick title.
+          const isUser = doc.sender_role === 'user';
+          let title = doc.message_content.substring(0, 30) + '...';
+          
+          sessionMap.set(doc.session_id, {
+            id: doc.session_id,
+            title: title,
+            updatedAt: new Date(doc.$createdAt).toLocaleDateString()
+          });
+        } else {
+          // If we find an older user message, update the title to the FIRST user message
+          if (doc.sender_role === 'user') {
+            const current = sessionMap.get(doc.session_id)!;
+            current.title = doc.message_content.substring(0, 30) + '...';
+          }
+        }
+      });
+      
+      setSessions(Array.from(sessionMap.values()));
+    } catch (error) {
+      console.error('Failed to load history', error);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  const loadSession = async (sid: string) => {
+    setIsHistoryOpen(false);
+    setIsInitializing(true);
+    try {
+      setSessionId(sid);
+      const historyRes = await databases.listDocuments(
+        appwriteConfig.databaseId,
+        appwriteConfig.tableId,
+        [
+          Query.equal('session_id', sid),
+          Query.orderAsc('$createdAt')
+        ]
+      );
+
+      const loadedMessages = historyRes.documents.map((doc) => ({
+        id: doc.$id,
+        role: doc.sender_role as 'user' | 'model',
+        content: doc.message_content,
+      }));
+      setMessages(loadedMessages);
+    } catch (e) {
+      console.error('Failed to load session', e);
+    } finally {
+      setIsInitializing(false);
+    }
   };
 
   const sendMessage = async (e: React.FormEvent) => {
@@ -185,13 +272,14 @@ export default function ChatPage() {
           <p className="text-sm text-purple-400/60 font-medium">Llama 3 Powered AI</p>
         </div>
         <div className="flex gap-2">
-          {/* History button placeholder - could toggle a modal */}
+          {/* History button */}
           <button 
+            onClick={loadHistory}
             title="Chat History"
             className="p-2.5 rounded-full bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white transition-all border border-white/10 hover:border-purple-500/50 hover:shadow-[0_0_15px_rgba(168,85,247,0.3)] flex items-center gap-2 px-4"
           >
             <span className="text-sm font-medium hidden md:block">History</span>
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
+            <History size={18} />
           </button>
           <button 
             onClick={clearChat}
@@ -292,6 +380,56 @@ export default function ChatPage() {
           <Send size={18} className="ml-0.5" />
         </button>
       </form>
+
+      {/* History Modal */}
+      {isHistoryOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#1a0f2e] border border-white/10 shadow-2xl rounded-3xl w-full max-w-md max-h-[80vh] flex flex-col relative overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-600 to-indigo-600"></div>
+            <div className="flex justify-between items-center p-6 border-b border-white/5">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <History className="text-purple-400" size={20} />
+                Chat History
+              </h2>
+              <button 
+                onClick={() => setIsHistoryOpen(false)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-4 space-y-2">
+              {isLoadingHistory ? (
+                <div className="flex flex-col items-center justify-center h-40 text-purple-400">
+                  <Loader2 className="animate-spin mb-2" size={24} />
+                  <p className="text-sm">Loading sessions...</p>
+                </div>
+              ) : sessions.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-40 text-gray-400 text-center">
+                  <MessageSquare size={32} className="mb-2 opacity-20" />
+                  <p className="text-sm">No chat history found.</p>
+                </div>
+              ) : (
+                sessions.map((session) => (
+                  <button
+                    key={session.id}
+                    onClick={() => loadSession(session.id)}
+                    className="w-full text-left p-4 rounded-xl bg-white/5 hover:bg-white/10 border border-transparent hover:border-purple-500/30 transition-all group flex flex-col gap-1"
+                  >
+                    <span className="text-sm font-medium text-gray-200 group-hover:text-purple-300 line-clamp-1">
+                      {session.title}
+                    </span>
+                    <span className="text-xs text-gray-500 font-mono">
+                      {session.updatedAt}
+                    </span>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
