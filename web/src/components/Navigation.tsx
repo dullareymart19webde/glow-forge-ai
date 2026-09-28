@@ -17,7 +17,7 @@ export function Navigation() {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#16092b]/90 backdrop-blur-xl border-t border-white/5 md:relative md:w-64 md:h-screen md:flex-col md:border-t-0 md:border-r flex justify-around md:justify-start px-2 py-3 md:p-6 gap-2 md:gap-4 shadow-2xl">
       <div className="hidden md:flex items-center gap-3 mb-10 pl-2">
-        <div className="w-9 h-9 rounded-xl glow-effect bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center overflow-hidden shadow-lg shadow-purple-500/30 p-1.5">
+        <div className="w-10 h-10 rounded-2xl flex items-center justify-center overflow-hidden shadow-lg shadow-purple-500/30">
           <img src="/assets/logo.png" alt="Logo" className="w-full h-full object-cover" />
         </div>
         <span className="text-white font-extrabold tracking-[0.15em] text-lg">GLOWFORGE</span>
