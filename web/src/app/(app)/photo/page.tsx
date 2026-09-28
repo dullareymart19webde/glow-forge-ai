@@ -15,6 +15,7 @@ export default function PhotoPage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [processedUrl, setProcessedUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -23,12 +24,14 @@ export default function PhotoPage() {
       setSelectedImage(file);
       setPreviewUrl(URL.createObjectURL(file));
       setProcessedUrl(null);
+      setError(null);
     }
   };
 
   const processImage = async (type: string) => {
     if (!selectedImage) return;
     setIsLoading(true);
+    setError(null);
 
     const formData = new FormData();
     formData.append('file', selectedImage);
@@ -45,7 +48,7 @@ export default function PhotoPage() {
       const blob = await response.blob();
       setProcessedUrl(URL.createObjectURL(blob));
     } catch (error) {
-      alert('Error processing image. Please try again.');
+      setError('The Forge failed to process this image. The file might be too large, or our servers are busy. Please try another photo.');
     } finally {
       setIsLoading(false);
     }
@@ -54,6 +57,22 @@ export default function PhotoPage() {
   return (
     <div className="flex flex-col h-full max-w-5xl mx-auto space-y-6">
       <h1 className="text-2xl font-bold text-white tracking-widest shrink-0">AI PHOTO STUDIO</h1>
+
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-6 py-4 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="bg-red-500/20 p-2 rounded-full">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <span className="font-medium text-sm">{error}</span>
+          <button onClick={() => setError(null)} className="ml-auto text-red-400 hover:text-red-300 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+          </button>
+        </div>
+      )}
 
       {selectedImage && (
         <div className="flex flex-wrap justify-center gap-3">
