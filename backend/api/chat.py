@@ -10,7 +10,8 @@ async def chat_endpoint(request: ChatRequest):
         # Build messages for Groq
         messages = [{"role": "system", "content": "You are GlowForge AI, a helpful, intelligent assistant. CRITICAL: Do NOT use any Markdown formatting, bolding, italics, asterisks, or code blocks. Return ONLY pure, unformatted plain text."}]
         for msg in request.history:
-            messages.append({"role": msg.role, "content": msg.content})
+            role = "assistant" if msg.role in ["model", "ai", "assistant"] else "user"
+            messages.append({"role": role, "content": msg.content})
         
         messages.append({"role": "user", "content": request.message})
 

@@ -184,65 +184,86 @@ export default function ChatPage() {
     setInput('');
     setIsLoading(true);
 
-    try {
-      // 1. Save user message to Appwrite
-      await databases.createDocument(
-        appwriteConfig.databaseId,
-        appwriteConfig.tableId,
-        userMessage.id,
-        {
-          user_id: userId,
-          session_title: 'N/A',
-          session_id: sessionId,
-          sender_role: 'user',
-          message_content: userMessage.content,
-        }
-      );
+    // 1. Asynchronously save user message to Appwrite (non-blocking)
+    databases.createDocument(
+      appwriteConfig.databaseId,
+      appwriteConfig.tableId,
+      userMessage.id,
+      {
+        user_id: userId || 'anonymous',
+        session_title: 'N/A',
+        session_id: sessionId,
+        sender_role: 'user',
+        message_content: userMessage.content,
+      }
+    ).catch((err) => console.warn('Could not save user message to Appwrite:', err));
 
+    try {
       // 2. Fetch AI response from Render Backend
+      // Map 'model' role to 'assistant' so Groq/LLM API doesn't reject it
+      const formattedHistory = messages.map((m) => ({
+        role: m.role === 'model' ? 'assistant' : m.role,
+        content: m.content,
+      }));
+
       const response = await fetch('https://glow-forge-ai.onrender.com/api/chat/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: userMessage.content,
-          history: messages.map(m => ({ role: m.role, content: m.content })),
+          history: formattedHistory,
           session_id: sessionId,
-          user_id: userId,
+          user_id: userId || 'anonymous',
         }),
       });
 
-      if (!response.ok) throw new Error('API Error');
+      if (!response.ok) {
+        let errorDetail = '';
+        try {
+          const errJson = await response.json();
+          errorDetail = errJson.detail || '';
+        } catch (_) {}
+
+        if (response.status === 503 || response.status === 504) {
+          throw new Error('Render server is currently spinning up (free tier sleep). Please try again in 30 seconds.');
+        }
+        throw new Error(errorDetail || `Server error (${response.status})`);
+      }
       
       const data = await response.json();
       
       const aiMessage: ChatMessage = {
         id: ID.unique(),
         role: 'model',
-        content: data.response, // Fixed from data.reply
+        content: data.response,
       };
 
       setMessages((prev) => [...prev, aiMessage]);
 
-      // 3. Save AI message to Appwrite
-      await databases.createDocument(
+      // 3. Asynchronously save AI message to Appwrite (non-blocking)
+      databases.createDocument(
         appwriteConfig.databaseId,
         appwriteConfig.tableId,
         aiMessage.id,
         {
-          user_id: userId,
+          user_id: userId || 'anonymous',
           session_title: 'N/A',
           session_id: sessionId,
           sender_role: 'model',
           message_content: aiMessage.content,
         }
-      );
+      ).catch((err) => console.warn('Could not save AI message to Appwrite:', err));
 
-    } catch (error) {
-      console.error(error);
+    } catch (error: any) {
+      console.error('Chat error:', error);
+      const errorContent = error.message && error.message.includes('spinning up')
+        ? '*GlowForge AI is currently waking up on Render (free tier standby). Please wait 30 seconds and try sending again!*'
+        : '*Failed to reach GlowForge AI. Please try again later.*';
+      
       const errorMessage: ChatMessage = {
         id: ID.unique(),
         role: 'model',
-        content: '*Failed to reach GlowForge AI. Please try again later.*',
+        content: errorContent,
       };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
